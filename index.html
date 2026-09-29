@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>算数5年：形が変わっても面積は？（三角形・平行四辺形）</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            background-color: #f1f5f9;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+        }
+
+        /* Aspect Ratio Container 16:9 */
+        .app-container {
+            width: 100vw;
+            height: 56.25vw; /* 16:9 ratio */
+            max-height: 100vh;
+            max-width: 177.78vh; /* 16:9 ratio */
+            margin: auto;
+            position: absolute;
+            top: 0; bottom: 0; left: 0; right: 0;
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* White Square Button Style (白色の面取りボタン) */
+        .btn-sq {
+            aspect-ratio: 1 / 1;
+            border-radius: 12px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            transition: all 0.15s ease;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            background-color: #ffffff;
+            color: #334155;
+        }
+        .btn-sq:hover {
+            background-color: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .btn-sq:active {
+            transform: translateY(1px);
+            background-color: #f1f5f9;
+        }
+        .btn-sq.active {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Circular Color Button (●の丸ボタン) */
+        .btn-circle-color {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            cursor: pointer;
+        }
+        .btn-circle-color:hover {
+            transform: scale(1.1);
+        }
+        .btn-circle-color.active-color {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+
+        /* Canvas overlays */
+        .canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-slate-200">
+
+    <div class="app-container relative flex flex-col justify-between border border-slate-300 rounded-lg select-none">
+        
+        <!-- HEADER TOOLBAR (Page 2 & 3 only) -->
+        <header id="toolbar" class="hidden z-20 bg-slate-100 border-b border-slate-300 px-3 py-2 flex items-center justify-between shadow-sm h-20">
+            <!-- Left Group -->
+            <div class="flex items-center gap-1.5">
+                <!-- 1. はじめから (Reset) -->
+                <button id="btn-reset" class="btn-sq h-14 w-16 text-[11px] whitespace-nowrap">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>はじめから</span>
+                </button>
+
+                <!-- 2. ふやす (Clone Frame) -->
+                <button id="btn-clone" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    <span>ふやす</span>
+                </button>
+
+                <div class="h-10 w-px bg-slate-300 mx-0.5"></div>
+
+                <!-- 3. 図形の色 (Shape Colors - ● without Black) -->
+                <div class="flex flex-col items-center bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
+                    <span class="text-[10px] text-slate-500 font-bold mb-1">図形の色</span>
+                    <div class="flex gap-1.5 px-1">
+                        <button data-shape-color="#3b82f6" class="btn-shape-color btn-circle-color bg-blue-500"><span class="sr-only">青</span></button>
+                        <button data-shape-color="#10b981" class="btn-shape-color btn-circle-color bg-emerald-500"><span class="sr-only">緑</span></button>
+                        <button data-shape-color="#ef4444" class="btn-shape-color btn-circle-color bg-red-500"><span class="sr-only">赤</span></button>
+                        <button data-shape-color="#f97316" class="btn-shape-color btn-circle-color bg-orange-500"><span class="sr-only">オレンジ</span></button>
+                        <button data-shape-color="#00B0F0" class="btn-shape-color btn-circle-color" style="background-color: #00B0F0;"><span class="sr-only">水色</span></button>
+                        <button data-shape-color="#FFFF00" class="btn-shape-color btn-circle-color" style="background-color: #FFFF00;"><span class="sr-only">黄色</span></button>
+                    </div>
+                </div>
+
+                <!-- 4. 動かす (Move Whole Shape Toggle) -->
+                <button id="btn-move" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h8M10 9l-3 3 3 3M14 9l3 3-3 3"></path></svg>
+                    <span>動かす</span>
+                </button>
+
+                <!-- 5. 底辺 (Base Line) -->
+                <button id="btn-base" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 19h16"></path></svg>
+                    <span>底辺</span>
+                </button>
+
+                <!-- 6. 高さ (Height Line) -->
+                <button id="btn-height" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v18M8 21h8M8 3h8"></path></svg>
+                    <span>高さ</span>
+                </button>
+
+                <!-- 7. 平行 (Parallel Lines Toggle) -->
+                <button id="btn-parallel" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 8h16M4 16h16"></path></svg>
+                    <span>平行</span>
+                </button>
+            </div>
+
+            <!-- Right Group -->
+            <div class="flex items-center gap-1.5">
+                <!-- 8. ペン (Pen Tools - ● with Black) -->
+                <div class="flex flex-col items-center bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
+                    <span class="text-[10px] text-slate-500 font-bold mb-1">ペン</span>
+                    <div class="flex gap-1.5 px-1">
+                        <button data-pen-color="#000000" class="btn-pen-color btn-circle-color bg-black"><span class="sr-only">黒ペン</span></button>
+                        <button data-pen-color="#ef4444" class="btn-pen-color btn-circle-color bg-red-500"><span class="sr-only">赤ペン</span></button>
+                        <button data-pen-color="#3b82f6" class="btn-pen-color btn-circle-color bg-blue-500"><span class="sr-only">青ペン</span></button>
+                        <button data-pen-color="#10b981" class="btn-pen-color btn-circle-color bg-emerald-500"><span class="sr-only">緑ペン</span></button>
+                        <button data-pen-color="#f97316" class="btn-pen-color btn-circle-color bg-orange-500"><span class="sr-only">オレンジペン</span></button>
+                    </div>
+                </div>
+
+                <!-- 9. けす (Eraser Toggle) -->
+                <button id="btn-eraser" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a1 1 0 01-1-1v-1a1 1 0 01.293-.707l10.414-10.414a2 2 0 012.828 0l3.586 3.586a2 2 0 010 2.828L10.414 19.707A1 1 0 019.707 20H5"></path></svg>
+                    <span>けす</span>
+                </button>
+
+                <!-- 10. すべてけす (Clear Pen) -->
+                <button id="btn-clear-pen" class="btn-sq h-14 w-14 text-[11px] leading-tight">
+                    <svg class="w-4 h-4 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>すべて<br>けす</span>
+                </button>
+
+                <!-- 11. カメラ (Screenshot) -->
+                <button id="btn-camera" class="btn-sq h-14 w-14 text-xs">
+                    <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>カメラ</span>
+                </button>
+            </div>
+
+            <!-- Toast / Message Box -->
+            <div id="toast" class="hidden fixed top-24 left-1/2 -translate-x-1/2 z-30 bg-slate-800 text-white text-xs px-4 py-2 rounded-lg shadow-lg font-medium transition-opacity">
+                メッセージ
+            </div>
+        </header>
+
+        <!-- MAIN CANVAS CONTAINER -->
+        <main class="relative flex-1 bg-white overflow-hidden">
+            <!-- Canvas Layer 1: Background Grid & Figures -->
+            <canvas id="gridCanvas" class="canvas-layer z-0"></canvas>
+            
+            <!-- Canvas Layer 2: Freehand Pen / Eraser -->
+            <canvas id="penCanvas" class="canvas-layer z-10 pointer-events-auto"></canvas>
+        </main>
+
+        <!-- FOOTER / BOTTOM NAVIGATION -->
+        <footer id="footer" class="hidden z-20 absolute bottom-4 right-4">
+            <button id="btn-back" class="btn-sq h-14 w-16 text-xs shadow-md">
+                <svg class="w-5 h-5 mb-0.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span>もどる</span>
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- APP STATE & CONSTANTS ---
+        const STATE = {
+            page: 1, // 1: Top Page, 2: Triangle Page, 3: Parallelogram Page
+            gridSize: 40,
+            cols: 20,
+            rows: 11,
+            
+            mode: 'MOVE',
+            previousMode: 'MOVE',
+            
+            shapeColor: '#3b82f6', // Default shape color
+            penColor: '#000000', // Default black pen
+            
+            showHeight: false,
+            showBase: false,
+            showMove: false,      // 全体移動モード（トグル）
+            showParallel: false,  // 平行線表示（トグル）
+
+            // Page 2 Triangle Specs
+            triangleA: { gridX: 14, gridY: 4 },
+            triangleBase: { startX: 6, endX: 12, gridY: 8 },
+            
+            // Page 3 Parallelogram Specs
+            paraDG: { startX: 12, width: 3, gridY: 4 },
+            paraBase: { startX: 8, width: 3, gridY: 8 },
+
+            clonesPage2: [],
+            clonesPage3: [],
+            selectedCloneId: null,
+
+            isDragging: false,
+            dragTarget: null, // 'A', 'DG', 'WHOLE'
+            dragStartGx: 0,
+            dragOffsetX: 0,
+
+            isDrawing: false,
+            lastX: 0,
+            lastY: 0
+        };
+
+        // DOM Elements
+        const gridCanvas = document.getElementById('gridCanvas');
+        const gridCtx = gridCanvas.getContext('2d');
+        const penCanvas = document.getElementById('penCanvas');
+        const penCtx = penCanvas.getContext('2d');
+
+        const toolbar = document.getElementById('toolbar');
+        const footer = document.getElementById('footer');
+        const toastEl = document.getElementById('toast');
+
+        // Buttons
+        const btnReset = document.getElementById('btn-reset');
+        const btnClone = document.getElementById('btn-clone');
+        const btnMove = document.getElementById('btn-move');
+        const btnBase = document.getElementById('btn-base');
+        const btnHeight = document.getElementById('btn-height');
+        const btnParallel = document.getElementById('btn-parallel');
+        const btnEraser = document.getElementById('btn-eraser');
+        const btnClearPen = document.getElementById('btn-clear-pen');
+        const btnCamera = document.getElementById('btn-camera');
+        const btnBack = document.getElementById('btn-back');
+
+        const shapeColorBtns = document.querySelectorAll('.btn-shape-color');
+        const penColorBtns = document.querySelectorAll('.btn-pen-color');
+
+        // --- INITIALIZATION ---
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            penCanvas.addEventListener('pointerdown', handlePointerDown);
+            penCanvas.addEventListener('pointermove', handlePointerMove);
+            penCanvas.addEventListener('pointerup', handlePointerUp);
+            penCanvas.addEventListener('pointercancel', handlePointerUp);
+
+            btnReset.addEventListener('click', resetPage);
+            btnClone.addEventListener('click', addClone);
+            btnMove.addEventListener('click', toggleMove);
+            btnBase.addEventListener('click', toggleBase);
+            btnHeight.addEventListener('click', toggleHeight);
+            btnParallel.addEventListener('click', toggleParallel);
+            btnEraser.addEventListener('click', selectEraser);
+            btnClearPen.addEventListener('click', clearPenCanvas);
+            btnCamera.addEventListener('click', captureScreenshot);
+            btnBack.addEventListener('click', goToPage1);
+
+            shapeColorBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const color = btn.getAttribute('data-shape-color');
+                    setShapeColor(color);
+                });
+            });
+
+            penColorBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const color = btn.getAttribute('data-pen-color');
+                    selectPen(color);
+                });
+            });
+
+            updateToolbarUI();
+            render();
+        }
+
+        // --- RESIZE & DISPLAY RATIO ---
+        function resizeCanvas() {
+            const container = document.querySelector('.app-container');
+            const rect = container.getBoundingClientRect();
+
+            const width = rect.width;
+            const height = rect.height - (STATE.page === 1 ? 0 : 80);
+
+            gridCanvas.width = width;
+            gridCanvas.height = height;
+            penCanvas.width = width;
+            penCanvas.height = height;
+
+            const baseSize = Math.min(width / STATE.cols, height / STATE.rows);
+            // 2・3ページ目は方眼を0.75倍の拡大度（1.125倍）に調整
+            STATE.gridSize = (STATE.page === 1) ? baseSize : baseSize * 1.125;
+
+            render();
+        }
+
+        // --- TOAST NOTIFICATION ---
+        function showToast(msg) {
+            toastEl.textContent = msg;
+            toastEl.classList.remove('hidden');
+            toastEl.style.opacity = '1';
+            setTimeout(() => {
+                toastEl.style.opacity = '0';
+                setTimeout(() => toastEl.classList.add('hidden'), 300);
+            }, 2000);
+        }
+
+        // --- CAMERA / SCREENSHOT ---
+        function captureScreenshot() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = gridCanvas.width;
+            tempCanvas.height = gridCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(gridCanvas, 0, 0);
+            tempCtx.drawImage(penCanvas, 0, 0);
+
+            const dataUrl = tempCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = '面積学習ボード.png';
+            link.href = dataUrl;
+            link.click();
+
+            showToast('がめんをほぞんしました');
+        }
+
+        function goToPage(pageNumber) {
+            STATE.page = pageNumber;
+            STATE.mode = 'MOVE';
+            STATE.showHeight = false;
+            STATE.showBase = false;
+            STATE.showMove = false;
+            STATE.showParallel = false;
+            STATE.selectedCloneId = null;
+
+            if (pageNumber === 1) {
+                toolbar.classList.add('hidden');
+                footer.classList.add('hidden');
+                penCanvas.style.cursor = 'default';
+            } else if (pageNumber === 2) {
+                toolbar.classList.remove('hidden');
+                footer.classList.remove('hidden');
+                penCanvas.style.cursor = 'default';
+                STATE.shapeColor = '#3b82f6'; // 2ページ目：青
+            } else if (pageNumber === 3) {
+                toolbar.classList.remove('hidden');
+                footer.classList.remove('hidden');
+                penCanvas.style.cursor = 'default';
+                STATE.shapeColor = '#10b981'; // 3ページ目：緑
+            }
+
+            resizeCanvas();
+            updateToolbarUI();
+        }
+
+        function goToPage1() {
+            goToPage(1);
+        }
+
+        // --- TOOL & MODE SELECTION ---
+        function setShapeColor(color) {
+            STATE.shapeColor = color;
+            const clones = STATE.page === 2 ? STATE.clonesPage2 : STATE.clonesPage3;
+            if (STATE.selectedCloneId !== null) {
+                const target = clones.find(c => c.id === STATE.selectedCloneId);
+                if (target) {
+                    target.color = color;
+                    showToast('わくの色をかえました');
+                }
+            }
+
+            updateToolbarUI();
+            render();
+        }
+
+        function selectPen(color) {
+            STATE.penColor = color;
+            STATE.mode = 'PEN';
+            STATE.previousMode = 'PEN';
+            STATE.selectedCloneId = null;
+            updateToolbarUI();
+            showToast('ペンモードです');
+        }
+
+        function selectEraser() {
+            if (STATE.mode === 'ERASER') {
+                STATE.mode = STATE.previousMode && STATE.previousMode !== 'ERASER' ? STATE.previousMode : 'MOVE';
+                showToast(STATE.mode === 'PEN' ? 'ペンモードです' : 'いどうモードです');
+            } else {
+                STATE.previousMode = STATE.mode;
+                STATE.mode = 'ERASER';
+                STATE.selectedCloneId = null;
+                showToast('けしごむモードです');
+            }
+            updateToolbarUI();
+        }
+
+        function toggleMove() {
+            STATE.showMove = !STATE.showMove;
+            btnMove.classList.toggle('active', STATE.showMove);
+            showToast(STATE.showMove ? 'ずけいを横にうごかせます' : 'うごかすモードを解除しました');
+            render();
+        }
+
+        function toggleHeight() {
+            STATE.showHeight = !STATE.showHeight;
+            btnHeight.classList.toggle('active', STATE.showHeight);
+            render();
+        }
+
+        function toggleBase() {
+            STATE.showBase = !STATE.showBase;
+            btnBase.classList.toggle('active', STATE.showBase);
+            render();
+        }
+
+        function toggleParallel() {
+            STATE.showParallel = !STATE.showParallel;
+            btnParallel.classList.toggle('active', STATE.showParallel);
+            render();
+        }
+
+        function updateToolbarUI() {
+            shapeColorBtns.forEach(btn => {
+                const color = btn.getAttribute('data-shape-color');
+                if (STATE.shapeColor === color) {
+                    btn.classList.add('active-color');
+                } else {
+                    btn.classList.remove('active-color');
+                }
+            });
+
+            penColorBtns.forEach(btn => {
+                const color = btn.getAttribute('data-pen-color');
+                if (STATE.mode === 'PEN' && STATE.penColor === color) {
+                    btn.classList.add('active-color');
+                } else {
+                    btn.classList.remove('active-color');
+                }
+            });
+
+            btnEraser.classList.toggle('active', STATE.mode === 'ERASER');
+            btnMove.classList.toggle('active', STATE.showMove);
+            btnHeight.classList.toggle('active', STATE.showHeight);
+            btnBase.classList.toggle('active', STATE.showBase);
+            btnParallel.classList.toggle('active', STATE.showParallel);
+        }
+
+        // --- RESET & CLONE ---
+        function resetPage() {
+            if (STATE.page === 2) {
+                STATE.triangleA.gridX = 14;
+                STATE.triangleBase.startX = 6;
+                STATE.triangleBase.endX = 12;
+                STATE.clonesPage2 = [];
+                STATE.shapeColor = '#3b82f6';
+            } else if (STATE.page === 3) {
+                STATE.paraDG.startX = 12;
+                STATE.paraBase.startX = 8;
+                STATE.clonesPage3 = [];
+                STATE.shapeColor = '#10b981';
+            }
+            STATE.selectedCloneId = null;
+            STATE.showHeight = false;
+            STATE.showBase = false;
+            STATE.showMove = false;
+            STATE.showParallel = false;
+            clearPenCanvas();
+            updateToolbarUI();
+            render();
+            showToast('はじめの状態にもどしました');
+        }
+
+        function addClone() {
+            const clones = STATE.page === 2 ? STATE.clonesPage2 : STATE.clonesPage3;
+            if (clones.length >= 10) {
+                showToast('ふやせるのは10こまでです');
+                return;
+            }
+
+            const newId = Date.now();
+            if (STATE.page === 2) {
+                clones.push({
+                    id: newId,
+                    type: 'triangle',
+                    gridX: STATE.triangleA.gridX,
+                    baseStartX: STATE.triangleBase.startX,
+                    baseEndX: STATE.triangleBase.endX,
+                    color: STATE.shapeColor
+                });
+            } else if (STATE.page === 3) {
+                clones.push({
+                    id: newId,
+                    type: 'para',
+                    startX: STATE.paraDG.startX,
+                    baseStartX: STATE.paraBase.startX,
+                    color: STATE.shapeColor
+                });
+            }
+
+            showToast(`ずけいをふやしました (${clones.length}/10)`);
+            render();
+        }
+
+        function clearPenCanvas() {
+            penCtx.clearRect(0, 0, penCanvas.width, penCanvas.height);
+            showToast('ペンで書いたものをけしました');
+        }
+
+        // --- COORDINATE HELPERS ---
+        function gridToPx(gx, gy) {
+            const offsetX = (gridCanvas.width - STATE.cols * STATE.gridSize) / 2;
+            const offsetY = (gridCanvas.height - STATE.rows * STATE.gridSize) / 2;
+            return {
+                x: offsetX + gx * STATE.gridSize,
+                y: offsetY + gy * STATE.gridSize
+            };
+        }
+
+        function pxToGrid(px, py) {
+            const offsetX = (gridCanvas.width - STATE.cols * STATE.gridSize) / 2;
+            const offsetY = (gridCanvas.height - STATE.rows * STATE.gridSize) / 2;
+            return {
+                gx: Math.round((px - offsetX) / STATE.gridSize),
+                gy: Math.round((py - offsetY) / STATE.gridSize)
+            };
+        }
+
+        function render() {
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+
+            drawGrid();
+
+            if (STATE.page === 1) {
+                renderPage1();
+            } else if (STATE.page === 2) {
+                renderPage2();
+            } else if (STATE.page === 3) {
+                renderPage3();
+            }
+        }
+
+        // --- DRAW GRID (方眼) ---
+        function drawGrid() {
+            const offsetX = (gridCanvas.width - STATE.cols * STATE.gridSize) / 2;
+            const offsetY = (gridCanvas.height - STATE.rows * STATE.gridSize) / 2;
+
+            gridCtx.save();
+            gridCtx.strokeStyle = '#e2e8f0';
+            gridCtx.lineWidth = 1;
+
+            const startC = Math.floor(-offsetX / STATE.gridSize) - 1;
+            const endC = Math.ceil((gridCanvas.width - offsetX) / STATE.gridSize) + 1;
+            const startR = Math.floor(-offsetY / STATE.gridSize) - 1;
+            const endR = Math.ceil((gridCanvas.height - offsetY) / STATE.gridSize) + 1;
+
+            for (let c = startC; c <= endC; c++) {
+                const x = offsetX + c * STATE.gridSize;
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, 0);
+                gridCtx.lineTo(x, gridCanvas.height);
+                gridCtx.stroke();
+            }
+
+            for (let r = startR; r <= endR; r++) {
+                const y = offsetY + r * STATE.gridSize;
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y);
+                gridCtx.lineTo(gridCanvas.width, y);
+                gridCtx.stroke();
+            }
+
+            gridCtx.restore();
+        }
+
+        // --- RED PARALLEL LINES (背面赤ライン) ---
+        function drawParallelLines(topY, bottomY) {
+            gridCtx.save();
+            gridCtx.strokeStyle = '#ef4444'; // Red color
+            gridCtx.lineWidth = 2.5;
+
+            // Top horizontal red line (端から端まで)
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, topY);
+            gridCtx.lineTo(gridCanvas.width, topY);
+            gridCtx.stroke();
+
+            // Bottom horizontal red line (端から端まで)
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, bottomY);
+            gridCtx.lineTo(gridCanvas.width, bottomY);
+            gridCtx.stroke();
+
+            gridCtx.restore();
+        }
+
+        // --- POINT IN POLYGON HELPER ---
+        function isPointInPolygon(px, py, points) {
+            let inside = false;
+            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+                const xi = points[i].x, yi = points[i].y;
+                const xj = points[j].x, yj = points[j].y;
+                const intersect = ((yi > py) !== (yj > py)) &&
+                    (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        // --- PAGE 1: TOP PAGE ---
+        function renderPage1() {
+            const pB = gridToPx(1, 8);
+            const pC = gridToPx(7, 8);
+            const pA = gridToPx(9, 4);
+
+            drawPolygon(gridCtx, [pA, pC, pB], '#2563eb', '#3b82f620', true, 2.5);
+            drawVertexLabel('A', pA.x, pA.y - 14, '#000000');
+            drawVertexLabel('B', pB.x - 12, pB.y + 14, '#000000');
+            drawVertexLabel('C', pC.x + 12, pC.y + 14, '#000000');
+
+            const pE = gridToPx(11, 8);
+            const pF = gridToPx(14, 8);
+            const pG = gridToPx(18, 4);
+            const pD = gridToPx(15, 4);
+
+            drawPolygon(gridCtx, [pD, pG, pF, pE], '#059669', '#10b98120', true, 2.5);
+            drawVertexLabel('D', pD.x - 12, pD.y - 14, '#000000');
+            drawVertexLabel('G', pG.x + 12, pG.y - 14, '#000000');
+            drawVertexLabel('E', pE.x - 12, pE.y + 14, '#000000');
+            drawVertexLabel('F', pF.x + 12, pF.y + 14, '#000000');
+        }
+
+        // --- PAGE 2: TRIANGLE TRANSFORMATION ---
+        function renderPage2() {
+            const base = STATE.triangleBase;
+            const pB = gridToPx(base.startX, base.gridY);
+            const pC = gridToPx(base.endX, base.gridY);
+            const pA = gridToPx(STATE.triangleA.gridX, STATE.triangleA.gridY);
+
+            // 背面の平行線（赤ライン）
+            if (STATE.showParallel) {
+                drawParallelLines(pA.y, pB.y);
+            }
+
+            // 1. Draw Cloned Outlines
+            STATE.clonesPage2.forEach(clone => {
+                const cpA = gridToPx(clone.gridX, STATE.triangleA.gridY);
+                const bStart = clone.baseStartX !== undefined ? clone.baseStartX : base.startX;
+                const bEnd = clone.baseEndX !== undefined ? clone.baseEndX : base.endX;
+                const cpB = gridToPx(bStart, base.gridY);
+                const cpC = gridToPx(bEnd, base.gridY);
+                const isSelected = clone.id === STATE.selectedCloneId;
+                drawPolygon(gridCtx, [cpA, cpC, cpB], clone.color, null, false, isSelected ? 3.5 : 2, isSelected ? [6, 3] : []);
+            });
+
+            // 2. Draw Current Active Triangle
+            drawPolygon(gridCtx, [pA, pC, pB], STATE.shapeColor, STATE.shapeColor + '20', true, 3);
+
+            // Vertex Labels
+            drawVertexLabel('A', pA.x, pA.y - 14, '#1e293b');
+            drawVertexLabel('B', pB.x - 12, pB.y + 14, '#475569');
+            drawVertexLabel('C', pC.x + 12, pC.y + 14, '#475569');
+
+            // 3. Draw Base Line if toggled ON
+            if (STATE.showBase) {
+                drawBaseLine(pB, pC);
+            }
+
+            // 4. Draw Height Line if toggled ON
+            if (STATE.showHeight) {
+                drawHeightLines(pA, pB, pC);
+            }
+
+            // 5. Subtle Drag Handle at Point A
+            drawSmallHandle(pA.x, pA.y);
+        }
+
+        // --- PAGE 3: PARALLELOGRAM TRANSFORMATION ---
+        function renderPage3() {
+            const base = STATE.paraBase;
+            const pE = gridToPx(base.startX, base.gridY);
+            const pF = gridToPx(base.startX + base.width, base.gridY);
+            const pD = gridToPx(STATE.paraDG.startX, STATE.paraDG.gridY);
+            const pG = gridToPx(STATE.paraDG.startX + STATE.paraDG.width, STATE.paraDG.gridY);
+
+            // 背面の平行線（赤ライン）
+            if (STATE.showParallel) {
+                drawParallelLines(pD.y, pE.y);
+            }
+
+            // 1. Draw Cloned Outlines
+            STATE.clonesPage3.forEach(clone => {
+                const cpD = gridToPx(clone.startX, STATE.paraDG.gridY);
+                const cpG = gridToPx(clone.startX + STATE.paraDG.width, STATE.paraDG.gridY);
+                const bStart = clone.baseStartX !== undefined ? clone.baseStartX : base.startX;
+                const cpE = gridToPx(bStart, base.gridY);
+                const cpF = gridToPx(bStart + base.width, base.gridY);
+                const isSelected = clone.id === STATE.selectedCloneId;
+                drawPolygon(gridCtx, [cpD, cpG, cpF, cpE], clone.color, null, false, isSelected ? 3.5 : 2, isSelected ? [6, 3] : []);
+            });
+
+            // 2. Draw Current Active Parallelogram
+            drawPolygon(gridCtx, [pD, pG, pF, pE], STATE.shapeColor, STATE.shapeColor + '20', true, 3);
+
+            // Vertex Labels
+            drawVertexLabel('D', pD.x - 12, pD.y - 14, '#1e293b');
+            drawVertexLabel('G', pG.x + 12, pG.y - 14, '#1e293b');
+            drawVertexLabel('E', pE.x - 12, pE.y + 14, '#475569');
+            drawVertexLabel('F', pF.x + 12, pF.y + 14, '#475569');
+
+            // 3. Draw Base Line if toggled ON
+            if (STATE.showBase) {
+                drawBaseLine(pE, pF);
+            }
+
+            // 4. Draw Height Line if toggled ON (点Gから垂直に下ろした高さ)
+            if (STATE.showHeight) {
+                drawHeightLines(pG, pE, pF);
+            }
+
+            // 5. Subtle Thick Line for Edge DG
+            drawThickEdge(pD, pG, STATE.shapeColor);
+        }
+
+        function drawPolygon(ctx, points, strokeColor, fillColor, isFilled = true, lineWidth = 3, lineDash = []) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash(lineDash);
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+
+            if (isFilled && fillColor) {
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+            }
+
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawVertexLabel(text, x, y, color = '#1e293b') {
+            gridCtx.save();
+            gridCtx.font = '18px sans-serif';
+            gridCtx.fillStyle = color;
+            gridCtx.textAlign = 'center';
+            gridCtx.textBaseline = 'middle';
+            gridCtx.fillText(text, x, y);
+            gridCtx.restore();
+        }
+
+        function drawTextLabel(text, x, y, color = '#1e293b') {
+            gridCtx.save();
+            gridCtx.font = '15px sans-serif';
+            gridCtx.fillStyle = color;
+            gridCtx.textAlign = 'center';
+            gridCtx.textBaseline = 'middle';
+            gridCtx.fillText(text, x, y);
+            gridCtx.restore();
+        }
+
+        function drawSmallHandle(x, y) {
+            gridCtx.save();
+            gridCtx.beginPath();
+            gridCtx.arc(x, y, 6, 0, Math.PI * 2);
+            gridCtx.fillStyle = '#2563eb';
+            gridCtx.fill();
+            gridCtx.lineWidth = 2;
+            gridCtx.strokeStyle = '#ffffff';
+            gridCtx.stroke();
+            gridCtx.restore();
+        }
+
+        function drawThickEdge(pD, pG, color) {
+            gridCtx.save();
+            gridCtx.beginPath();
+            gridCtx.moveTo(pD.x, pD.y);
+            gridCtx.lineTo(pG.x, pG.y);
+            gridCtx.strokeStyle = color;
+            gridCtx.lineWidth = 6;
+            gridCtx.lineCap = 'round';
+            gridCtx.stroke();
+            gridCtx.restore();
+        }
+
+        function drawBaseLine(pLeft, pRight) {
+            gridCtx.save();
+            gridCtx.beginPath();
+            gridCtx.moveTo(pLeft.x, pLeft.y);
+            gridCtx.lineTo(pRight.x, pRight.y);
+            gridCtx.strokeStyle = '#8b5cf6';
+            gridCtx.lineWidth = 6;
+            gridCtx.lineCap = 'round';
+            gridCtx.stroke();
+
+            const centerX = (pLeft.x + pRight.x) / 2;
+            const centerY = pLeft.y + 24;
+            drawTextLabel('底辺', centerX, centerY, '#7c3aed');
+            gridCtx.restore();
+        }
+
+        function drawHeightLines(pTop, pBaseLeft, pBaseRight) {
+            gridCtx.save();
+            gridCtx.setLineDash([5, 4]);
+            gridCtx.strokeStyle = '#a855f7';
+            gridCtx.lineWidth = 2;
+
+            const baseY = pBaseLeft.y;
+            const perpX = pTop.x;
+
+            if (perpX < pBaseLeft.x) {
+                gridCtx.beginPath();
+                gridCtx.moveTo(pBaseLeft.x, baseY);
+                gridCtx.lineTo(perpX - 15, baseY);
+                gridCtx.stroke();
+            } else if (perpX > pBaseRight.x) {
+                gridCtx.beginPath();
+                gridCtx.moveTo(pBaseRight.x, baseY);
+                gridCtx.lineTo(perpX + 15, baseY);
+                gridCtx.stroke();
+            }
+
+            gridCtx.beginPath();
+            gridCtx.moveTo(pTop.x, pTop.y);
+            gridCtx.lineTo(perpX, baseY);
+            gridCtx.stroke();
+
+            gridCtx.setLineDash([]);
+            gridCtx.strokeStyle = '#a855f7';
+            gridCtx.lineWidth = 1.5;
+            const sz = 8;
+            const dir = perpX >= pBaseLeft.x ? -1 : 1;
+            gridCtx.beginPath();
+            gridCtx.moveTo(perpX + dir * sz, baseY);
+            gridCtx.lineTo(perpX + dir * sz, baseY - sz);
+            gridCtx.lineTo(perpX, baseY - sz);
+            gridCtx.stroke();
+
+            drawTextLabel('高さ', perpX + (dir * sz) + (dir * 16), (pTop.y + baseY) / 2, '#7e22ce');
+            gridCtx.restore();
+        }
+
+        function handlePointerDown(e) {
+            const rect = penCanvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+
+            if (STATE.page === 1) {
+                const triPoints = [gridToPx(9, 4), gridToPx(7, 8), gridToPx(1, 8)];
+                const paraPoints = [gridToPx(15, 4), gridToPx(18, 4), gridToPx(14, 8), gridToPx(11, 8)];
+
+                if (isPointInPolygon(px, py, triPoints)) {
+                    goToPage(2);
+                } else if (isPointInPolygon(px, py, paraPoints)) {
+                    goToPage(3);
+                }
+                return;
+            }
+
+            // --- 頂点変形操作の優先判定（点A／辺DG） ---
+            let handledDeformDrag = false;
+
+            if (STATE.page === 2) {
+                const pA = gridToPx(STATE.triangleA.gridX, STATE.triangleA.gridY);
+                if (Math.hypot(px - pA.x, py - pA.y) < 40) {
+                    STATE.isDragging = true;
+                    STATE.dragTarget = 'A';
+                    try { penCanvas.setPointerCapture(e.pointerId); } catch(err) {}
+                    handledDeformDrag = true;
+                }
+            } else if (STATE.page === 3) {
+                const pD = gridToPx(STATE.paraDG.startX, STATE.paraDG.gridY);
+                const pG = gridToPx(STATE.paraDG.startX + STATE.paraDG.width, STATE.paraDG.gridY);
+                if (py >= pD.y - 30 && py <= pD.y + 30 && px >= pD.x - 25 && px <= pG.x + 25) {
+                    STATE.isDragging = true;
+                    STATE.dragTarget = 'DG';
+                    STATE.dragOffsetX = px - pD.x;
+                    try { penCanvas.setPointerCapture(e.pointerId); } catch(err) {}
+                    handledDeformDrag = true;
+                }
+            }
+
+            if (handledDeformDrag) {
+                render();
+                return;
+            }
+
+            // --- 全体横移動操作判定（「動かす」ボタンON時） ---
+            if (STATE.showMove) {
+                const gridPos = pxToGrid(px, py);
+                let insideFigure = false;
+
+                if (STATE.page === 2) {
+                    const pA = gridToPx(STATE.triangleA.gridX, STATE.triangleA.gridY);
+                    const pB = gridToPx(STATE.triangleBase.startX, STATE.triangleBase.gridY);
+                    const pC = gridToPx(STATE.triangleBase.endX, STATE.triangleBase.gridY);
+                    insideFigure = isPointInPolygon(px, py, [pA, pC, pB]) || (py >= pB.y - 25 && py <= pB.y + 25 && px >= Math.min(pB.x, pC.x) - 20 && px <= Math.max(pB.x, pC.x) + 20);
+                } else if (STATE.page === 3) {
+                    const pD = gridToPx(STATE.paraDG.startX, STATE.paraDG.gridY);
+                    const pG = gridToPx(STATE.paraDG.startX + STATE.paraDG.width, STATE.paraDG.gridY);
+                    const pE = gridToPx(STATE.paraBase.startX, STATE.paraBase.gridY);
+                    const pF = gridToPx(STATE.paraBase.startX + STATE.paraBase.width, STATE.paraBase.gridY);
+                    insideFigure = isPointInPolygon(px, py, [pD, pG, pF, pE]);
+                }
+
+                if (insideFigure) {
+                    STATE.isDragging = true;
+                    STATE.dragTarget = 'WHOLE';
+                    STATE.dragStartGx = gridPos.gx;
+                    try { penCanvas.setPointerCapture(e.pointerId); } catch(err) {}
+                    return;
+                }
+            }
+
+            // --- ペン・けしごむ描画 ---
+            if (STATE.mode === 'PEN' || STATE.mode === 'ERASER') {
+                STATE.isDrawing = true;
+                STATE.lastX = px;
+                STATE.lastY = py;
+                try { penCanvas.setPointerCapture(e.pointerId); } catch(err) {}
+            }
+        }
+
+        function handlePointerMove(e) {
+            const rect = penCanvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+
+            if (STATE.page === 1) {
+                const triPoints = [gridToPx(9, 4), gridToPx(7, 8), gridToPx(1, 8)];
+                const paraPoints = [gridToPx(15, 4), gridToPx(18, 4), gridToPx(14, 8), gridToPx(11, 8)];
+                penCanvas.style.cursor = (isPointInPolygon(px, py, triPoints) || isPointInPolygon(px, py, paraPoints)) ? 'pointer' : 'default';
+                return;
+            }
+
+            if (STATE.isDragging) {
+                const gridPos = pxToGrid(px, py);
+
+                if (STATE.dragTarget === 'A') {
+                    const clampedGX = Math.max(1, Math.min(STATE.cols - 1, gridPos.gx));
+                    STATE.triangleA.gridX = clampedGX;
+                } else if (STATE.dragTarget === 'DG') {
+                    const gridPosOffset = pxToGrid(px - STATE.dragOffsetX, py);
+                    const clampedStartX = Math.max(1, Math.min(STATE.cols - 1 - STATE.paraDG.width, gridPosOffset.gx));
+                    STATE.paraDG.startX = clampedStartX;
+                } else if (STATE.dragTarget === 'WHOLE') {
+                    const deltaGX = gridPos.gx - STATE.dragStartGx;
+                    if (deltaGX !== 0) {
+                        if (STATE.page === 2) {
+                            const baseWidth = STATE.triangleBase.endX - STATE.triangleBase.startX;
+                            const newStart = STATE.triangleBase.startX + deltaGX;
+                            const newEnd = STATE.triangleBase.endX + deltaGX;
+                            const newA = STATE.triangleA.gridX + deltaGX;
+
+                            if (newStart >= 1 && newEnd <= STATE.cols - 1 && newA >= 1 && newA <= STATE.cols - 1) {
+                                STATE.triangleBase.startX = newStart;
+                                STATE.triangleBase.endX = newEnd;
+                                STATE.triangleA.gridX = newA;
+                                STATE.dragStartGx = gridPos.gx;
+                            }
+                        } else if (STATE.page === 3) {
+                            const newBaseStart = STATE.paraBase.startX + deltaGX;
+                            const newDGStart = STATE.paraDG.startX + deltaGX;
+
+                            if (newBaseStart >= 1 && (newBaseStart + STATE.paraBase.width) <= STATE.cols - 1 &&
+                                newDGStart >= 1 && (newDGStart + STATE.paraDG.width) <= STATE.cols - 1) {
+                                STATE.paraBase.startX = newBaseStart;
+                                STATE.paraDG.startX = newDGStart;
+                                STATE.dragStartGx = gridPos.gx;
+                            }
+                        }
+                    }
+                }
+
+                render();
+            } else if (STATE.isDrawing && (STATE.mode === 'PEN' || STATE.mode === 'ERASER')) {
+                penCtx.save();
+                penCtx.beginPath();
+                penCtx.moveTo(STATE.lastX, STATE.lastY);
+                penCtx.lineTo(px, py);
+
+                if (STATE.mode === 'PEN') {
+                    penCtx.globalCompositeOperation = 'source-over';
+                    penCtx.strokeStyle = STATE.penColor;
+                    penCtx.lineWidth = 3;
+                    penCtx.lineCap = 'round';
+                    penCtx.lineJoin = 'round';
+                } else if (STATE.mode === 'ERASER') {
+                    penCtx.globalCompositeOperation = 'destination-out';
+                    penCtx.lineWidth = 24;
+                    penCtx.lineCap = 'round';
+                    penCtx.lineJoin = 'round';
+                }
+
+                penCtx.stroke();
+                penCtx.restore();
+
+                STATE.lastX = px;
+                STATE.lastY = py;
+            }
+        }
+
+        function handlePointerUp(e) {
+            if (STATE.isDragging) {
+                STATE.isDragging = false;
+                STATE.dragTarget = null;
+                render();
+            }
+
+            if (STATE.isDrawing) {
+                STATE.isDrawing = false;
+            }
+        }
+
+        // --- LAUNCH APPLICATION ---
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
